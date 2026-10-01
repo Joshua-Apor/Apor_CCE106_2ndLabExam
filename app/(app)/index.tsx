@@ -1,14 +1,14 @@
+import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useAuth } from '@/hooks/useAuth';
 
 export default function DashboardScreen() {
-  const { token } = useAuth();
-  // TODO EXAM: Replace placeholder user data with authenticated user information.
+  const { token, user } = useAuth();
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.eyebrow}>STUDENT SERVICE PORTAL</Text>
-      <Text style={styles.title}>Welcome, Student</Text>
+      <Text style={styles.title}>Welcome, {user?.name ?? 'Student'}</Text>
       <Text style={styles.subtitle}>Your student services in one place.</Text>
       <View style={styles.card}>
         <Text style={styles.heading}>Quick Actions</Text>
