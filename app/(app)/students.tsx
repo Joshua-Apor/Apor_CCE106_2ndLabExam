@@ -1,29 +1,77 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- State setters and loader are exam placeholders. */
+import StudentCard, { type Student } from '@/components/StudentCard';
+import { API_BASE_URL } from '@/constants/api';
+import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import StudentCard, { type Student } from '@/components/StudentCard';
 
 export default function StudentsScreen() {
+  const { token } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
 
   const loadStudents = async () => {
-    // TODO EXAM: 1. Set loading and clear previous errors.
-    // TODO EXAM: 2. Call GET /students using fetch() and async/await.
-    // TODO EXAM: 3. Include Authorization: Bearer TOKEN from useAuth() if required.
-    // TODO EXAM: 4. Check response.ok and handle 401 Unauthorized.
-    // TODO EXAM: 5. Parse JSON and save the student array to state.
-    // TODO EXAM: 6. Handle errors and stop loading inside finally.
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/students`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        setStudents([]);
+        setError('Your session is no longer valid. Please sign in again.');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Unable to load students (${response.status}).`);
+      }
+
+      const payload = await response.json().catch(() => null);
+      const rawStudents = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload?.students)
+            ? payload.students
+            : [];
+
+      if (!Array.isArray(rawStudents)) {
+        throw new Error('The server returned an unexpected student payload.');
+      }
+
+      const mappedStudents = rawStudents.map((student: any) => ({
+        id: student?.id ?? student?._id ?? student?.studentId,
+        name: student?.name ?? student?.fullName ?? student?.displayName ?? student?.username ?? 'Name not available',
+        email: student?.email ?? student?.emailAddress ?? null,
+        course: student?.course ?? student?.program ?? student?.major ?? null,
+      }));
+
+      setStudents(mappedStudents);
+    } catch (loadError) {
+      console.error('Failed to fetch students', loadError);
+      setStudents([]);
+      setError(loadError instanceof Error ? loadError.message : 'Something went wrong while loading students.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    // TODO EXAM: Call loadStudents() when the screen loads.
-  }, []);
+    void loadStudents();
+  }, [token]);
 
-  // TODO EXAM: Use filter() to return students whose name matches the search text.
-  const filteredStudents = students;
+  const filteredStudents = students.filter((student) => {
+    const value = student.name ?? '';
+    return value.toLowerCase().includes(search.trim().toLowerCase());
+  });
 
   return (
     <View style={styles.container}>
