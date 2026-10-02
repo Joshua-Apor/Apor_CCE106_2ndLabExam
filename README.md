@@ -4,11 +4,11 @@
 
 ### Student Information
 
-Name:
+Name: Joshua Benedict T. Apor
 
-Section:
+Section: CCE106 - 2063
 
-Date:
+Date: October 2, 2026
 
 ### Required Features
 
