@@ -19,8 +19,6 @@ export default function DashboardScreen() {
         <Text style={styles.heading}>Session Status</Text>
         <Text style={styles.subtitle}>{token ? 'Authenticated' : 'Not Available'}</Text>
       </View>
-      <Link href="/sign-in" style={styles.link}>Open Sign In</Link>
-      <Text style={styles.note}>Exam starter: screens are accessible while route protection is incomplete.</Text>
     </ScrollView>
   );
 }
