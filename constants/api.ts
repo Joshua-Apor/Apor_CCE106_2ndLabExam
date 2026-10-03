@@ -1,5 +1,5 @@
 // Base URL for the student service exam API.
-export const API_BASE_URL = "https://a54352d4-79d7-4496-9eda-1a0ff97a677f.mock.pstmn.io" as const;
+export const API_BASE_URL = "https://7abe69b8-8054-4afe-92ee-dc2fd437963a.mock.pstmn.io" as const;
 
 // Expected endpoints:
 // POST /login
