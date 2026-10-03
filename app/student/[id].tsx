@@ -1,28 +1,81 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- State setters and loader are exam placeholders. */
-import { useEffect, useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { type Student } from '@/components/StudentCard';
+import { API_BASE_URL } from '@/constants/api';
+import { useAuth } from '@/hooks/useAuth';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function StudentDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { token } = useAuth();
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadStudent = async () => {
-    // TODO EXAM: Validate the id read from useLocalSearchParams().
-    // TODO EXAM: Set loading and clear previous errors.
-    // TODO EXAM: GET /students/{id} with fetch(), async/await, and a Bearer token.
-    // TODO EXAM: Check response.ok; handle 401 Unauthorized and missing records.
-    // TODO EXAM: Parse JSON and update student state.
-    // TODO EXAM: Handle errors and stop loading in finally.
-  };
+  const loadStudent = useCallback(async () => {
+    const requestedId = Array.isArray(id) ? id[0] : id;
+
+    if (!requestedId) {
+      setStudent(null);
+      setError('Student id is missing.');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/students/${encodeURIComponent(requestedId)}`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        setStudent(null);
+        setError('Your session is no longer valid. Please sign in again.');
+        return;
+      }
+
+      if (response.status === 404) {
+        setStudent(null);
+        setError('Student not found.');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Unable to load student (${response.status}).`);
+      }
+
+      const payload = await response.json().catch(() => null);
+      const nextStudent = payload && typeof payload === 'object' ? payload : null;
+
+      if (!nextStudent) {
+        throw new Error('The server returned an unexpected student payload.');
+      }
+
+      setStudent({
+        id: nextStudent.id ?? nextStudent._id ?? nextStudent.studentId,
+        name: nextStudent.name ?? nextStudent.fullName ?? nextStudent.displayName ?? nextStudent.username ?? 'Name not available',
+        email: nextStudent.email ?? nextStudent.emailAddress ?? null,
+        course: nextStudent.course ?? nextStudent.program ?? nextStudent.major ?? null,
+      });
+    } catch (loadError) {
+      console.error('Failed to fetch student detail', loadError);
+      setStudent(null);
+      setError(loadError instanceof Error ? loadError.message : 'Something went wrong while loading the student.');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, token]);
 
   useEffect(() => {
-    // TODO EXAM: Call loadStudent() when id changes.
-  }, [id]);
+    void loadStudent();
+  }, [loadStudent]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -31,7 +84,7 @@ export default function StudentDetailsScreen() {
         : error ? <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text>
         : !student ? <Text style={styles.text}>No student record available.</Text> : null}
       <View style={styles.card}>
-        <Text style={styles.text}>ID: {id || 'Not available'}</Text>
+        <Text style={styles.text}>ID: {student?.id ?? id ?? 'Not available'}</Text>
         <Text style={styles.text}>Name: {student?.name || '—'}</Text>
         <Text style={styles.text}>Email: {student?.email || '—'}</Text>
         <Text style={styles.text}>Course: {student?.course || '—'}</Text>

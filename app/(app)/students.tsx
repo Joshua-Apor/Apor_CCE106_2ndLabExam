@@ -1,7 +1,7 @@
 import StudentCard, { type Student } from '@/components/StudentCard';
 import { API_BASE_URL } from '@/constants/api';
 import { useAuth } from '@/hooks/useAuth';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function StudentsScreen() {
@@ -11,7 +11,7 @@ export default function StudentsScreen() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
 
-  const loadStudents = async () => {
+  const loadStudents = useCallback(async () => {
     setLoading(true);
     setError('');
 
@@ -41,7 +41,9 @@ export default function StudentsScreen() {
           ? payload.data
           : Array.isArray(payload?.students)
             ? payload.students
-            : [];
+            : Array.isArray(payload?.value)
+              ? payload.value
+              : [];
 
       if (!Array.isArray(rawStudents)) {
         throw new Error('The server returned an unexpected student payload.');
@@ -62,11 +64,11 @@ export default function StudentsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     void loadStudents();
-  }, [token]);
+  }, [loadStudents]);
 
   const filteredStudents = students.filter((student) => {
     const value = student.name ?? '';
