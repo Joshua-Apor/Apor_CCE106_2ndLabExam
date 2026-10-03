@@ -8,7 +8,7 @@ Name: Joshua Benedict T. Apor
 
 Section: CCE106 - 2063
 
-Date: October 2, 2026
+Date: October 1, 2026
 
 ### Required Features
 
